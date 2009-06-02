@@ -1,0 +1,28 @@
+
+Smugmug => Flickr
+==
+This project contains python scripts for transferring images from smugmug to flickr:
+ 1. smugdump.py: download smugmug images to disk
+ 2. flickrupload.py : upload images output by 1 to flickr
+ 
+The scripts attempt to keep photo metadata around for image filenames, titles,
+and tags.  The scripts were created in a few hours to get my photos transferred to flickr so the quality and generality of the software is not all that good.
+
+SmugMug albums are turned into flickr photosets.  I did not keep the 'key' or primary image for photosets/albums consistent across sites.
+
+Requirements
+==
+ * smugmug-api : http://code.google.com/p/smugmug-api/
+ * PyYAML : http://pyyaml.org/wiki/PyYAML
+ * flickapi : http://stuvel.eu/projects/flickrapi
+
+Caveats
+==
+I was too lazy to make the scripts take command line arguments.  See config.cfg for config options.
+
+
+The error handling also sucks.  During uploads and downloads, any errors result in a message to the console and the upload continues.  I'm not looking for perfect parity between my SmugMug account and Flickr; some missing photos are not a big deal to me and the cost of implementing retry queues seemed out of scope.
+
+If you have multiple SmugMug albums with the same name, the script tries to do something tricky and create unique photoset names when uploading photos to Flickr.  I didn't really test this out so beware.
+
+Good luck and enjoy!
