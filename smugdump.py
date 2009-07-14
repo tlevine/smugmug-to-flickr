@@ -1,27 +1,22 @@
 #!/usr/bin/python
 
-from smugmugapi.functional import *
-from os.path import *
-from os import mkdir
-import httplib
-import yaml
-import sys
 import ConfigParser
+import httplib
+import os
+from os import path
+import re
+import sys
+
+from smugmugapi.functional import *
+import yaml
+
+import config as conf
+import helper
+import smugmug_common
+
 
 # read config
-config = ConfigParser.ConfigParser()
-config.read("config.cfg")
-
-output_dir=config.get('Config', "image_dir") # dump albums to here
-sm_email=config.get('SmugMug', "email")
-smugmug_api_key=config.get('SmugMug', "api_key")
-sm_passwd=config.get('SmugMug', "passwd")
-sm_short_username=config.get('SmugMug', "username")
-
-
-def login(sapi):
-    result=sapi.login_withPassword (EmailAddress = sm_email, Password = sm_passwd)
-    return result.Login[0].Session[0]["id"]
+config = conf.load()
 
 def meta_dir(image):
     r = {}
@@ -33,7 +28,7 @@ def meta_dir(image):
     return r
 
 def ingest_image(sapi, sessionId, image, dst):
-    conn = httplib.HTTPConnection(sm_short_username + ".smugmug.com")
+    conn = httplib.HTTPConnection(config.smugmug_short_username + ".smugmug.com")
     
     fn = image["FileName"]
 
@@ -44,52 +39,63 @@ def ingest_image(sapi, sessionId, image, dst):
     else:
         url = image["OriginalURL"]
 
-    print "fetching " + url
+    log("%s -> " % url, newline=False)
     try:
         conn.request("GET", url)
         resp = conn.getresponse()
         
         if resp.status != 200:
-            print "error fetching " + url
-            print resp.reason
+            error("%s -> %s %s" % (url, resp.status, resp.reason))
         else:
             meta_fn = dst + "/" + fn + ".yaml"
-            meta_f = open (meta_fn, 'w')
-            meta_f.write(yaml.dump(meta_dir(image)))
-            meta_f.close()
+            if not path.exists(meta_fn):
+                meta_f = open (meta_fn, 'w')
+                meta_f.write(yaml.dump(meta_dir(image)))
+                meta_f.close()
             
-            out_fn = dst + "/" + fn
-            print "writing image to " + out_fn 
-            f = open(out_fn, 'w') # TODO make / conditional
-            f.write(resp.read())
-            f.close()
-    except:
-        print "Unexpected error:", sys.exc_info()[0]
-        print "error exporting image %s" % (dst+"/"+fn)
+            out_fn = path.join(dst, fn)
+
+            if path.exists(out_fn):
+                log("skipping")
+            else:
+                log(out_fn)
+                f = open(out_fn, 'w') # TODO make / conditional
+                f.write(resp.read())
+                f.close()
+    except Exception, e:
+        error("error exporting image %s: %s" % (url, e))
     finally:
         conn.close
-        
+
 def main():
-    if not exists(output_dir):
-        mkdir(output_dir)
+    if not len(sys.argv) == 2:
+        fail("expecting: <output_dir>")
+
+    output_dir = sys.argv[1]
+
+    if not path.exists(output_dir):
+        os.mkdir(output_dir)
     
-    sapi = SmugMugAPI(smugmug_api_key)
+    sapi = SmugMugAPI(config.smugmug_api_key)
     sessionId = login(sapi)
     albums = sapi.albums_get(SessionID=sessionId).Albums[0].Album
-        
+    
+
     for album in albums:
         # this assumes that albums have unique names which they may not
-        album_dir = output_dir+"/"+album["id"]
-        print "fetching images for album " + album["Title"]
+        raw_title = album["Title"]
+        sanitized_title = build_album_title(raw_title, album["id"])
+        album_dir = path.join(output_dir, sanitized_title)
+        print "album: '%s'" % raw_title
         
-        if not exists(album_dir):
-            mkdir(album_dir)
+        if not path.exists(album_dir):
+            os.makedirs(album_dir)
         
         images = sapi.images_get(SessionID=sessionId, AlbumID=album["id"], AlbumKey=album["Key"], Heavy="1").Images[0].Image
         
         for img in images:
             ingest_image(sapi, sessionId, img, album_dir)
 
+
 if __name__ == "__main__":
     main()
-
