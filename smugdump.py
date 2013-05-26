@@ -7,6 +7,8 @@ from os import path
 import re
 import sys
 
+from unidecode import unidecode
+
 def log(arg, **kwargs):
     print 'log: ' + arg
 
@@ -94,7 +96,7 @@ def main():
         # this assumes that albums have unique names which they may not
         raw_title = album["Title"]
         album_dir = path.join(output_dir, str(album['id']), raw_title)
-        print "album: '%s'" % raw_title
+        print unidecode("album: '%s'" % raw_title)
 
         if not path.exists(album_dir):
             os.makedirs(album_dir)
