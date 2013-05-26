@@ -8,7 +8,10 @@ import re
 import sys
 
 def log(arg, **kwargs):
-    print arg
+    print 'log: ' + arg
+
+def error(arg, **kwargs):
+    print 'error: '+ arg
 
 from smugmug_common import login
 from smugmugapi.functional import *
@@ -32,9 +35,12 @@ def meta_dir(image):
     return r
 
 def ingest_image(sapi, sessionId, image, dst):
-    conn = httplib.HTTPConnection(config.smugmug_short_username + ".smugmug.com")
-
     fn = image["FileName"]
+    meta_fn = dst + "/" + fn + ".yaml"
+    if path.exists(meta_fn):
+        return
+
+    conn = httplib.HTTPConnection(config.smugmug_short_username + ".smugmug.com")
 
     # flickr doesn't support RAW photos so we download high-quality JPEGs
     if fn.endswith("CR2"): # it's raw
@@ -51,7 +57,6 @@ def ingest_image(sapi, sessionId, image, dst):
         if resp.status != 200:
             error("%s -> %s %s" % (url, resp.status, resp.reason))
         else:
-            meta_fn = dst + "/" + fn + ".yaml"
             if not path.exists(meta_fn):
                 meta_f = open (meta_fn, 'w')
                 meta_f.write(yaml.dump(meta_dir(image)))
