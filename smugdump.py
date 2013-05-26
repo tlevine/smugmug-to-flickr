@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 
 import ConfigParser
 import httplib
@@ -7,6 +7,10 @@ from os import path
 import re
 import sys
 
+def log(arg, **kwargs):
+    print arg
+
+from smugmug_common import login
 from smugmugapi.functional import *
 import yaml
 
@@ -29,7 +33,7 @@ def meta_dir(image):
 
 def ingest_image(sapi, sessionId, image, dst):
     conn = httplib.HTTPConnection(config.smugmug_short_username + ".smugmug.com")
-    
+
     fn = image["FileName"]
 
     # flickr doesn't support RAW photos so we download high-quality JPEGs
@@ -43,7 +47,7 @@ def ingest_image(sapi, sessionId, image, dst):
     try:
         conn.request("GET", url)
         resp = conn.getresponse()
-        
+
         if resp.status != 200:
             error("%s -> %s %s" % (url, resp.status, resp.reason))
         else:
@@ -52,7 +56,7 @@ def ingest_image(sapi, sessionId, image, dst):
                 meta_f = open (meta_fn, 'w')
                 meta_f.write(yaml.dump(meta_dir(image)))
                 meta_f.close()
-            
+
             out_fn = path.join(dst, fn)
 
             if path.exists(out_fn):
@@ -75,24 +79,23 @@ def main():
 
     if not path.exists(output_dir):
         os.mkdir(output_dir)
-    
+
     sapi = SmugMugAPI(config.smugmug_api_key)
-    sessionId = login(sapi)
+    sessionId = login(sapi, config)
     albums = sapi.albums_get(SessionID=sessionId).Albums[0].Album
-    
+
 
     for album in albums:
         # this assumes that albums have unique names which they may not
         raw_title = album["Title"]
-        sanitized_title = build_album_title(raw_title, album["id"])
-        album_dir = path.join(output_dir, sanitized_title)
+        album_dir = path.join(output_dir, str(album['id']), raw_title)
         print "album: '%s'" % raw_title
-        
+
         if not path.exists(album_dir):
             os.makedirs(album_dir)
-        
+
         images = sapi.images_get(SessionID=sessionId, AlbumID=album["id"], AlbumKey=album["Key"], Heavy="1").Images[0].Image
-        
+
         for img in images:
             ingest_image(sapi, sessionId, img, album_dir)
 

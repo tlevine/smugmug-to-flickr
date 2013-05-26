@@ -74,7 +74,7 @@ class Flickrizer:
             traceback.print_exc(sys.stderr)
             return None
 
-    # photoset names are unique but smugmug album names aren't.  this method 
+    # photoset names are unique but smugmug album names aren't.  this method
     # derives a unique photoset name
     def derive_photo_set_name(self, albums, this_album):
         candidates = [a for a in albums if a["Title"] == this_album["Title"]]
@@ -124,7 +124,7 @@ class Flickrizer:
                         continue
 
                     img_fn = input_dir + "/" + dirName + "/" + f
-                    
+
                     # skips if we've already uploaded this image
                     if img_fn in previous_uploads:
                         helper.log("%s (skipping)" % img_fn)
@@ -160,21 +160,22 @@ class Flickrizer:
                         # is that this is a master/slave delay, we just log such errors
                         traceback.print_exc(file=sys.stderr)
 
-parser = OptionParser(usage="%prog [options] <input_dir> <progress_log>")
-parser.add_option("-p", "--private", 
-                  dest="private",
-                  help="set uploaded images as private",
-                  action="store_true")
-parser.add_option("-i", "--id",
-                  dest="id",
-                  help="smugmug album id")
-                  
-(options, args) = parser.parse_args()
+if __name__ == '__main__':
+    parser = OptionParser(usage="%prog [options] <input_dir> <progress_log>")
+    parser.add_option("-p", "--private",
+                      dest="private",
+                      help="set uploaded images as private",
+                      action="store_true")
+    parser.add_option("-i", "--id",
+                      dest="id",
+                      help="smugmug album id")
 
-if not len(args) == 2:
-    parser.print_help(sys.stderr)
-    sys.exit(1)
+    (options, args) = parser.parse_args()
 
-input_dir = args[0]
-progress_log = args[1]
-Flickrizer(options).run(input_dir, progress_log)
+    if not len(args) == 2:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
+
+    input_dir = args[0]
+    progress_log = args[1]
+    Flickrizer(options).run(input_dir, progress_log)
