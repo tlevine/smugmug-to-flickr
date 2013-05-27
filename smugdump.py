@@ -10,10 +10,10 @@ import sys
 from unidecode import unidecode
 
 def log(arg, **kwargs):
-    print 'log: ' + arg
+    print 'log: ' + arg.encode('ascii', 'replace')
 
 def error(arg, **kwargs):
-    print 'error: '+ arg
+    print 'error: '+ arg.encode('ascii', 'replace')
 
 from smugmug_common import login
 from smugmugapi.functional import *
