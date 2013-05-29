@@ -95,6 +95,9 @@ def main():
     for album in albums:
         # this assumes that albums have unique names which they may not
         raw_title = album["Title"]
+        if raw_title == 'My SmugMug Site Files (Do Not Delete)':
+            continue
+
         album_dir = path.join(output_dir, str(album['id']), raw_title)
         print unidecode("album: '%s'" % raw_title)
 
