@@ -95,7 +95,10 @@ def main():
     for album in albums:
         # this assumes that albums have unique names which they may not
         raw_title = album["Title"]
-        if raw_title == 'My SmugMug Site Files (Do Not Delete)':
+        if raw_title in [
+            'My SmugMug Site Files (Do Not Delete)',
+            'About',
+        ]:
             continue
 
         album_dir = path.join(output_dir, str(album['id']), raw_title)
