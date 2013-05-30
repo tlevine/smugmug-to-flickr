@@ -95,11 +95,6 @@ def main():
     for album in albums:
         # this assumes that albums have unique names which they may not
         raw_title = album["Title"]
-        if raw_title in [
-            'My SmugMug Site Files (Do Not Delete)',
-            'About',
-        ]:
-            continue
 
         album_dir = path.join(output_dir, str(album['id']), raw_title)
         print unidecode("album: '%s'" % raw_title)
@@ -107,7 +102,11 @@ def main():
         if not path.exists(album_dir):
             os.makedirs(album_dir)
 
-        images = sapi.images_get(SessionID=sessionId, AlbumID=album["id"], AlbumKey=album["Key"], Heavy="1").Images[0].Image
+        try:
+            images = sapi.images_get(SessionID=sessionId, AlbumID=album["id"], AlbumKey=album["Key"], Heavy="1").Images[0].Image
+        except SmugMugError, msg:
+            if unicode(msg) != 'rsp: error 15: empty set - no images found':
+                raise
 
         for img in images:
             ingest_image(sapi, sessionId, img, album_dir)
